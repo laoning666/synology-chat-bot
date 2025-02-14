@@ -1,0 +1,16 @@
+# Web Framework
+Flask==2.3.3
+Werkzeug==2.3.7
+
+# HTTP Requests
+requests>=2.31.0
+urllib3>=2.0.4
+certifi==2023.7.22
+charset-normalizer==3.2.0
+idna==3.4
+
+# Runtime
+python-dotenv==1.0.0
+
+# Type Hints
+typing-extensions==4.7.1

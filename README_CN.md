@@ -46,17 +46,17 @@ docker run -d \
 
 2. 修改`.env`中的环境变量
 
-3. 运行
+3. 运行 `docker-compose up -d`
 ```bash
-version: '3.8'
-
 services:
-  synology-chat-bot:
-    image: laoning666/synology-chat-bot
-    container_name: synology-chat-bot
-    ports:
-      - "8008:8008"
-    restart: unless-stopped
+   synology-chat-bot:
+      image: laoning666/synology-chat-bot
+      container_name: synology-chat-bot
+      ports:
+         - "8008:8008"
+      env_file:
+         - .env
+      restart: unless-stopped
 ```
 
 

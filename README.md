@@ -53,12 +53,14 @@ docker run -d \
 version: '3.8'
 
 services:
-  synology-chat-bot:
-    image: laoning666/synology-chat-bot
-    container_name: synology-chat-bot
-    ports:
-      - "8008:8008"
-    restart: unless-stopped
+   synology-chat-bot:
+      image: laoning666/synology-chat-bot
+      container_name: synology-chat-bot
+      ports:
+         - "8008:8008"
+      env_file:
+         - .env
+      restart: unless-stopped
 ```
 
 ## Synology Chat Setup

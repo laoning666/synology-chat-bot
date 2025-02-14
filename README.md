@@ -1,3 +1,5 @@
+English / [简体中文](./README_CN.md)
+
 # Synology Chat AI Assistant
 
 An AI-powered chatbot for Synology Chat that enables users to interact directly with AI models (such as GPT) within their chat interface.

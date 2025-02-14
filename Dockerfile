@@ -9,7 +9,12 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV ENVIRONMENT=production
 
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir gunicorn
+
 COPY . /app/
-RUN pip install --no-cache-dir -r requirements.txt
+
 EXPOSE 8008
-CMD ["python", "app.py"]
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8008", "--workers", "4", "--timeout", "120", "app:app"]

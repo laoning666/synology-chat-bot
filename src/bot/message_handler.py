@@ -46,8 +46,12 @@ class MessageHandler:
         if not message:
             return None
 
-        # 发送输入提示
-        self.send_message(event['user_id'], self.conversation_config['typing_text'])
+        # 发送输入提示（可选）
+        # 注意：Synology Chat 不支持撤回/编辑消息，所以此提示会保留在聊天记录中
+        # 如果不需要此提示，可以将 CONVERSATION_TYPING_TEXT 设置为空
+        typing_text = self.conversation_config['typing_text']
+        if typing_text:
+            self.send_message(event['user_id'], typing_text)
 
         # 添加用户消息到会话
         conversation.add_message("user", message)

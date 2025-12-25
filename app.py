@@ -18,6 +18,8 @@ def validate_startup_requirements():
         'CHAT_API_URL': CHAT_API['url'],
         'CHAT_API_KEY': CHAT_API['api_key'],
         'CHAT_API_MODEL': CHAT_API['model'],
+        'SYNOLOGY_INCOMING_WEBHOOK_URL': SYNOLOGY['incoming_webhook_url'],
+        'SYNOLOGY_OUTGOING_WEBHOOK_TOKEN': SYNOLOGY['outgoing_webhook_token'],
     }
 
     missing_configs = []

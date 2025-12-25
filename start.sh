@@ -22,10 +22,10 @@ python -c "from app import app; print('✅ Application ready')" || {
 }
 
 # 启动gunicorn
-echo "✅ Starting gunicorn with ${GUNICORN_WORKERS:-4} workers..."
+echo "✅ Starting gunicorn with ${GUNICORN_WORKERS:-1} worker..."
 exec gunicorn \
     --bind "0.0.0.0:8008" \
-    --workers "${GUNICORN_WORKERS:-4}" \
+    --workers "${GUNICORN_WORKERS:-1}" \
     --timeout "${GUNICORN_TIMEOUT:-120}" \
     --access-logfile - \
     --error-logfile - \

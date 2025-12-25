@@ -13,14 +13,21 @@ def validate_startup_requirements():
     """验证启动所需的配置 / Validate startup requirements"""
     print("🔍 Validating startup configuration...")
 
-    # 检查必要的配置 / Check required configurations
+    api_type = CHAT_API['type'].lower()
+    print(f"   API Type: {api_type}")
+
+    # 基础必须配置 / Base required configurations
     required_configs = {
         'CHAT_API_URL': CHAT_API['url'],
         'CHAT_API_KEY': CHAT_API['api_key'],
-        'CHAT_API_MODEL': CHAT_API['model'],
         'SYNOLOGY_INCOMING_WEBHOOK_URL': SYNOLOGY['incoming_webhook_url'],
         'SYNOLOGY_OUTGOING_WEBHOOK_TOKEN': SYNOLOGY['outgoing_webhook_token'],
     }
+
+    # CHAT_API_MODEL 仅在 OpenAI 类型时必需，Dify 在平台侧配置模型
+    # CHAT_API_MODEL is only required for OpenAI type, Dify configures model on platform side
+    if api_type == 'openai':
+        required_configs['CHAT_API_MODEL'] = CHAT_API['model']
 
     missing_configs = []
     for key, value in required_configs.items():
@@ -74,7 +81,8 @@ def create_app():
         print("💡 Please check:")
         print("   1. CHAT_API_URL is correct")
         print("   2. CHAT_API_KEY is valid")
-        print("   3. CHAT_API_MODEL is correct")
+        if CHAT_API['type'].lower() == 'openai':
+            print("   3. CHAT_API_MODEL is correct")
         print("   4. Network connection is working")
         sys.exit(1)
 
@@ -119,7 +127,8 @@ def create_app():
             'environment': ENVIRONMENT,
             'debug_mode': server_config['debug'],
             'version': '1.0.0',
-            'api_model': CHAT_API['model']
+            'api_type': CHAT_API['type'],
+            'api_model': CHAT_API['model'] or 'N/A (configured on platform)'
         }), 200
 
     @app.route('/api-test', methods=['GET'])
@@ -136,7 +145,8 @@ def create_app():
             'message': 'Synology Chat Bot is running',
             'status': 'ok',
             'environment': ENVIRONMENT,
-            'api_model': CHAT_API['model']
+            'api_type': CHAT_API['type'],
+            'api_model': CHAT_API['model'] or 'N/A (configured on platform)'
         }), 200
 
     print("🎉 Application initialization completed!")

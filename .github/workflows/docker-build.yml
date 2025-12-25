@@ -73,12 +73,25 @@ jobs:
             type=raw,value=latest
             type=sha,prefix=
 
+      - name: Extract version from tag
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            VERSION="dev"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.VERSION }}
           tags: ${{ steps.dockerhub-login.outcome == 'success' && steps.meta-both.outputs.tags || steps.meta-ghcr.outputs.tags }}
           labels: ${{ steps.dockerhub-login.outcome == 'success' && steps.meta-both.outputs.labels || steps.meta-ghcr.outputs.labels }}
           cache-from: type=gha

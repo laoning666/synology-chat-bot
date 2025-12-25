@@ -3,6 +3,9 @@ import os
 from dotenv import load_dotenv
 from typing import Dict, Any
 
+# 应用版本号（统一在此处修改）/ Application version (modify here)
+APP_VERSION = '2.0.0'
+
 # 获取环境类型
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
 

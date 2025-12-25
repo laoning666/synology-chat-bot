@@ -4,7 +4,7 @@ import sys
 from flask import Flask, request, jsonify
 from config.settings import (
     CHAT_API, SYNOLOGY, CONVERSATION, HTTP,
-    get_server_config, is_development, ENVIRONMENT
+    get_server_config, is_development, ENVIRONMENT, APP_VERSION
 )
 from src.bot.chat_manager import ChatManager
 from src.utils.api_tester import APITester
@@ -126,7 +126,7 @@ def create_app():
             'service': 'synology-chat-bot',
             'environment': ENVIRONMENT,
             'debug_mode': server_config['debug'],
-            'version': '1.0.0',
+            'version': APP_VERSION,
             'api_type': CHAT_API['type'],
             'api_model': CHAT_API['model'] or 'N/A (configured on platform)'
         }), 200

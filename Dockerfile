@@ -1,7 +1,9 @@
 FROM python:3.10-slim
 
+ARG APP_VERSION=2.0.0
+
 LABEL maintainer="laoning"
-LABEL version="1.0.0"
+LABEL version="${APP_VERSION}"
 LABEL description="Synology Chat Bot with AI integration"
 
 WORKDIR /app

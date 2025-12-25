@@ -79,12 +79,15 @@ services:
 
 | Variable Name | Description | Default Value |
 | :--- | :--- | :--- |
+| `CHAT_API_TYPE` | API type: `openai` or `dify` | `openai` |
 | `CHAT_API_URL` | AI API endpoint URL | - |
 | `CHAT_API_KEY` | API authentication key | - |
-| `CHAT_API_MODEL` | AI model identifier | - |
-| `CHAT_API_TEMPERATURE`| Response randomness (0.0-1.0) | `0.7` |
-| `CHAT_API_MAX_TOKENS` | Maximum response length | `4096` |
-| `CHAT_API_SYSTEM_PROMPT`| AI system prompt | `"You are an intelligent assistant that can help users answer questions."`|
+| `CHAT_API_MODEL` | AI model identifier (OpenAI only) | - |
+| `CHAT_API_TEMPERATURE`| Response randomness (0.0-1.0, OpenAI only) | `0.7` |
+| `CHAT_API_MAX_TOKENS` | Maximum response length (OpenAI only) | `4096` |
+| `CHAT_API_SYSTEM_PROMPT`| AI system prompt (OpenAI only) | `"You are an intelligent assistant..."` |
+
+> **Note**: When using Dify (`CHAT_API_TYPE=dify`), the `MODEL`, `TEMPERATURE`, `MAX_TOKENS`, and `SYSTEM_PROMPT` settings are configured in the Dify dashboard, not via environment variables.
 
 ### Synology Chat Configuration
 
@@ -189,13 +192,18 @@ synology-chat-bot/
 ## FAQ
 
 **Q: How can I change the AI model's response style?**
-A: You can customize the AI's system prompt by modifying the `CHAT_API_SYSTEM_PROMPT` environment variable.
+A: For OpenAI-compatible APIs, customize the `CHAT_API_SYSTEM_PROMPT` environment variable. For Dify, configure the prompt in the Dify dashboard.
 
 **Q: Is conversation data lost after a session timeout?**
 A: Yes, timed-out sessions are automatically cleared. You can adjust the timeout duration with `CONVERSATION_TIMEOUT`.
 
-**Q: Which AI models are supported?**
-A: In theory, any model compatible with the OpenAI API format is supported, including OpenAI's GPT series, Claude, etc.
+**Q: Which AI APIs are supported?**
+A: Two types are supported:
+- **OpenAI-compatible**: Any API following the OpenAI Chat Completions format (OpenAI GPT, Azure OpenAI, Claude, local LLMs with OpenAI-compatible endpoints, etc.)
+- **Dify**: Dify platform's Chat API
+
+**Q: How do I use Dify instead of OpenAI?**
+A: Set `CHAT_API_TYPE=dify`, configure `CHAT_API_URL` to your Dify API endpoint, and set `CHAT_API_KEY` to your Dify app's API key. Model and prompt settings are configured in the Dify dashboard.
 
 **Q: How is message security ensured?**
 A: The system uses webhook token validation to secure messages and supports HTTPS for encrypted data transmission.

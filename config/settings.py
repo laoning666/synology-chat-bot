@@ -37,6 +37,7 @@ def get_env_bool(key: str, default: bool) -> bool:
 
 # Chat API Configuration
 CHAT_API: Dict[str, Any] = {
+    'type': os.getenv('CHAT_API_TYPE', 'openai'),  # 支持: openai, dify
     'url': os.getenv('CHAT_API_URL', ''),
     'api_key': os.getenv('CHAT_API_KEY', ''),
     'model': os.getenv('CHAT_API_MODEL', ''),

@@ -77,12 +77,15 @@ services:
 
 | 变量名 | 说明 | 默认值 |
 | :--- | :--- | :--- |
+| `CHAT_API_TYPE` | API类型：`openai` 或 `dify` | `openai` |
 | `CHAT_API_URL` | AI API接口地址 | - |
 | `CHAT_API_KEY` | API认证密钥 | - |
-| `CHAT_API_MODEL` | AI模型标识符 | - |
-| `CHAT_API_TEMPERATURE` | 响应随机性（0.0-1.0） | `0.7` |
-| `CHAT_API_MAX_TOKENS` | 最大响应长度 | `4096` |
-| `CHAT_API_SYSTEM_PROMPT` | AI系统提示词 | `"你是一个智能助手，可以帮助用户解答问题。"` |
+| `CHAT_API_MODEL` | AI模型标识符（仅OpenAI） | - |
+| `CHAT_API_TEMPERATURE` | 响应随机性（0.0-1.0，仅OpenAI） | `0.7` |
+| `CHAT_API_MAX_TOKENS` | 最大响应长度（仅OpenAI） | `4096` |
+| `CHAT_API_SYSTEM_PROMPT` | AI系统提示词（仅OpenAI） | `"你是一个智能助手..."` |
+
+> **注意**: 使用 Dify 时（`CHAT_API_TYPE=dify`），`MODEL`、`TEMPERATURE`、`MAX_TOKENS` 和 `SYSTEM_PROMPT` 在 Dify 控制台中配置，无需设置环境变量。
 
 ### 群晖聊天配置
 
@@ -188,13 +191,18 @@ synology-chat-bot/
 ## 常见问题
 
 **Q: 如何修改AI模型的回复风格？**
-A: 可以通过修改 `CHAT_API_SYSTEM_PROMPT` 环境变量来自定义AI的系统提示词。
+A: 使用 OpenAI 兼容 API 时，通过修改 `CHAT_API_SYSTEM_PROMPT` 环境变量自定义系统提示词。使用 Dify 时，在 Dify 控制台中配置提示词。
 
 **Q: 会话超时后数据会丢失吗？**
 A: 是的，超时的会话会被自动清理。可以通过调整 `CONVERSATION_TIMEOUT` 来修改超时时间。
 
-**Q: 支持哪些AI模型？**
-A: 理论上支持任何兼容OpenAI API格式的模型，包括OpenAI的GPT系列、Claude等等。
+**Q: 支持哪些AI API？**
+A: 支持两种类型：
+- **OpenAI兼容**: 任何兼容 OpenAI Chat Completions API 格式的服务（OpenAI GPT、Azure OpenAI、Claude、本地部署的兼容接口等）
+- **Dify**: Dify 平台的 Chat API
+
+**Q: 如何使用 Dify 替代 OpenAI？**
+A: 设置 `CHAT_API_TYPE=dify`，配置 `CHAT_API_URL` 为 Dify API 地址，`CHAT_API_KEY` 为 Dify 应用的 API 密钥。模型和提示词设置在 Dify 控制台中配置。
 
 **Q: 如何保证消息安全？**
 A: 系统通过webhook令牌验证来确保消息安全，并支持HTTPS加密传输。

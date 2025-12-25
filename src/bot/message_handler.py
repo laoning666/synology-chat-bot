@@ -1,6 +1,7 @@
 from typing import Dict, Any, Optional
 from ..utils.http_client import HTTPClient
 from ..models.conversation import Conversation
+from ..providers.factory import ProviderFactory
 
 class MessageHandler:
     def __init__(self, config: Dict[str, Any]):
@@ -12,6 +13,8 @@ class MessageHandler:
         self.chat_config = config['CHAT_API']
         self.synology_config = config['SYNOLOGY']
         self.conversation_config = config['CONVERSATION']
+        # 使用 Provider 工厂创建对应的 Chat Provider
+        self.chat_provider = ProviderFactory.create(config)
 
     def validate_token(self, token: str) -> bool:
         """验证webhook token"""
@@ -26,15 +29,16 @@ class MessageHandler:
         )
 
     def get_chat_response(self, conversation: Conversation) -> Optional[str]:
-        """从Chat API获取响应"""
-        messages = conversation.get_context(self.chat_config['system_prompt'])
-        return self.http_client.send_chat_api_request(
-            self.chat_config['url'],
-            messages,
-            self.chat_config['api_key'],
-            self.chat_config['model'],
-            self.chat_config['temperature'],
-            self.chat_config['max_tokens']
+        """从Chat API获取响应（使用 Provider 抽象层）"""
+        # 获取最后一条用户消息
+        last_message = ''
+        if conversation.messages:
+            last_message = conversation.messages[-1].get('content', '')
+
+        return self.chat_provider.send_message(
+            conversation.user_id,
+            last_message,
+            conversation
         )
 
     def handle_message(self, event: Dict[str, Any], conversation: Conversation) -> Optional[str]:

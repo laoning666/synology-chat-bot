@@ -68,7 +68,7 @@ def get_server_config() -> Dict[str, Any]:
     """获取服务器配置"""
     return {
         'host': '0.0.0.0',
-        'port': 8108,
+        'port': 8008,
         'debug': ENVIRONMENT == 'development'
     }
 

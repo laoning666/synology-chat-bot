@@ -1,3 +1,5 @@
+简体中文 / [English](./README.md)
+
 # Synology Chat AI 助手
 
 一个集成了AI能力的群晖聊天机器人，允许用户直接在Synology Chat中与AI模型（如GPT）进行对话。
@@ -29,13 +31,29 @@
     docker pull laoning666/synology-chat-bot:latest
     ```
 2.  **运行容器：**
+
+    **OpenAI 兼容 API：**
     ```bash
     docker run -d \
       --name synology-chat-bot \
       -p 8008:8008 \
-      -e CHAT_API_URL=YOUR_API_URL \
+      -e CHAT_API_TYPE=openai \
+      -e CHAT_API_URL=https://api.openai.com/v1/chat/completions \
       -e CHAT_API_KEY=YOUR_API_KEY \
-      -e CHAT_API_MODEL=YOUR_MODEL \
+      -e CHAT_API_MODEL=gpt-4o \
+      -e SYNOLOGY_INCOMING_WEBHOOK_URL=YOUR_WEBHOOK_URL \
+      -e SYNOLOGY_OUTGOING_WEBHOOK_TOKEN=YOUR_TOKEN \
+      laoning666/synology-chat-bot:latest
+    ```
+
+    **Dify API：**
+    ```bash
+    docker run -d \
+      --name synology-chat-bot \
+      -p 8008:8008 \
+      -e CHAT_API_TYPE=dify \
+      -e CHAT_API_URL=https://api.dify.ai/v1/chat-messages \
+      -e CHAT_API_KEY=app-YOUR_DIFY_APP_KEY \
       -e SYNOLOGY_INCOMING_WEBHOOK_URL=YOUR_WEBHOOK_URL \
       -e SYNOLOGY_OUTGOING_WEBHOOK_TOKEN=YOUR_TOKEN \
       laoning666/synology-chat-bot:latest
@@ -52,13 +70,13 @@ version: '3.8'
 
 services:
   synology-chat-bot:
-    build: .
+    image: laoning666/synology-chat-bot:latest
     container_name: synology-chat-bot
+    restart: unless-stopped
     ports:
       - "8008:8008"
     env_file:
       - .env
-    restart: unless-stopped
 ```
 
 ### 开发环境设置
@@ -157,6 +175,11 @@ synology-chat-bot/
 │   │   └── message_handler.py # 消息处理
 │   ├── models/
 │   │   └── conversation.py    # 会话状态
+│   ├── providers/             # AI Provider 抽象层
+│   │   ├── base.py            # Provider 基类
+│   │   ├── factory.py         # Provider 工厂
+│   │   ├── openai_provider.py # OpenAI 实现
+│   │   └── dify_provider.py   # Dify 实现
 │   └── utils/
 │       ├── http_client.py     # HTTP客户端工具
 │       └── api_tester.py      # API连接测试器

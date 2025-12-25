@@ -31,13 +31,29 @@ An AI-powered chatbot for Synology Chat, allowing users to interact directly wit
     docker pull laoning666/synology-chat-bot:latest
     ```
 2.  **Run the container:**
+
+    **For OpenAI-compatible API:**
     ```bash
     docker run -d \
       --name synology-chat-bot \
       -p 8008:8008 \
-      -e CHAT_API_URL=YOUR_API_URL \
+      -e CHAT_API_TYPE=openai \
+      -e CHAT_API_URL=https://api.openai.com/v1/chat/completions \
       -e CHAT_API_KEY=YOUR_API_KEY \
-      -e CHAT_API_MODEL=YOUR_MODEL \
+      -e CHAT_API_MODEL=gpt-4o \
+      -e SYNOLOGY_INCOMING_WEBHOOK_URL=YOUR_WEBHOOK_URL \
+      -e SYNOLOGY_OUTGOING_WEBHOOK_TOKEN=YOUR_TOKEN \
+      laoning666/synology-chat-bot:latest
+    ```
+
+    **For Dify API:**
+    ```bash
+    docker run -d \
+      --name synology-chat-bot \
+      -p 8008:8008 \
+      -e CHAT_API_TYPE=dify \
+      -e CHAT_API_URL=https://api.dify.ai/v1/chat-messages \
+      -e CHAT_API_KEY=app-YOUR_DIFY_APP_KEY \
       -e SYNOLOGY_INCOMING_WEBHOOK_URL=YOUR_WEBHOOK_URL \
       -e SYNOLOGY_OUTGOING_WEBHOOK_TOKEN=YOUR_TOKEN \
       laoning666/synology-chat-bot:latest
@@ -54,13 +70,13 @@ version: '3.8'
 
 services:
   synology-chat-bot:
-    build: .
+    image: laoning666/synology-chat-bot:latest
     container_name: synology-chat-bot
+    restart: unless-stopped
     ports:
       - "8008:8008"
     env_file:
       - .env
-    restart: unless-stopped
 ```
 
 ### Development Setup
@@ -158,6 +174,11 @@ synology-chat-bot/
 │   │   └── message_handler.py # Message processing
 │   ├── models/
 │   │   └── conversation.py    # Conversation state
+│   ├── providers/             # AI provider abstraction
+│   │   ├── base.py            # Base provider class
+│   │   ├── factory.py         # Provider factory
+│   │   ├── openai_provider.py # OpenAI implementation
+│   │   └── dify_provider.py   # Dify implementation
 │   └── utils/
 │       ├── http_client.py     # HTTP client utility
 │       └── api_tester.py      # API connection tester

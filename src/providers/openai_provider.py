@@ -10,6 +10,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .base import ChatProvider
+from ..utils.logger import logger, log_request, log_response, log_error
 
 
 class OpenAIProvider(ChatProvider):
@@ -18,6 +19,7 @@ class OpenAIProvider(ChatProvider):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         self._init_session()
+        logger.debug(f"OpenAIProvider initialized with model: {self.chat_config.get('model', 'N/A')}")
 
     def _init_session(self) -> None:
         """初始化 HTTP Session 并配置重试策略"""
@@ -31,6 +33,7 @@ class OpenAIProvider(ChatProvider):
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
+        logger.debug(f"HTTP session initialized with max_retries={max_retries}")
 
     def _build_messages(self, context: Optional[Any]) -> List[Dict[str, str]]:
         """
@@ -46,7 +49,9 @@ class OpenAIProvider(ChatProvider):
 
         # 如果 context 是 Conversation 对象，使用其方法获取上下文
         if context and hasattr(context, 'get_context'):
-            return context.get_context(system_prompt)
+            messages = context.get_context(system_prompt)
+            logger.debug(f"Built message context with {len(messages)} messages")
+            return messages
 
         # 否则返回只包含系统提示的列表
         if system_prompt:
@@ -70,6 +75,9 @@ class OpenAIProvider(ChatProvider):
         Returns:
             AI 的响应文本，如果失败则返回 None
         """
+        logger.info(f"[User:{user_id}] Sending message to OpenAI API...")
+        start_time = time.time()
+
         try:
             messages = self._build_messages(context)
 
@@ -85,26 +93,75 @@ class OpenAIProvider(ChatProvider):
                 "max_tokens": self.chat_config.get('max_tokens', 4096)
             }
 
+            log_request("POST", self.get_api_url(), headers=headers)
+
             response = self.session.post(
                 self.get_api_url(),
                 headers=headers,
                 json=json_data,
                 timeout=self.get_timeout()
             )
+            
+            response_time = time.time() - start_time
+            log_response(response.status_code, response_time)
+
             response.raise_for_status()
 
             result = response.json()
-            return result["choices"][0]["message"]["content"]
+            ai_response = result["choices"][0]["message"]["content"]
+            
+            # 记录 token 使用情况
+            if 'usage' in result:
+                usage = result['usage']
+                logger.info(f"[User:{user_id}] Response received in {response_time:.2f}s "
+                           f"(tokens: {usage.get('total_tokens', 'N/A')})")
+            else:
+                logger.info(f"[User:{user_id}] Response received in {response_time:.2f}s")
+            
+            return ai_response
 
-        except requests.exceptions.RequestException as e:
-            print(f"[OpenAIProvider] Request failed: {str(e)}")
+        except requests.exceptions.Timeout:
+            log_error("Timeout", f"Request timeout after {self.get_timeout()}s",
+                     suggestion="Increase HTTP_TIMEOUT or check network connection")
+            return None
+        except requests.exceptions.ConnectionError as e:
+            log_error("Connection", f"Cannot connect to API server: {self.get_api_url()}",
+                     details=str(e),
+                     suggestion="Check CHAT_API_URL is correct and server is accessible")
+            return None
+        except requests.exceptions.HTTPError as e:
+            response_time = time.time() - start_time
+            status_code = e.response.status_code if e.response else 'Unknown'
+            error_body = ""
+            try:
+                error_body = e.response.json() if e.response else {}
+            except Exception:
+                error_body = e.response.text if e.response else str(e)
+            
+            log_error("HTTP", f"Status {status_code}: {error_body}",
+                     suggestion=self._get_http_error_suggestion(status_code))
             return None
         except (KeyError, IndexError) as e:
-            print(f"[OpenAIProvider] Response parsing failed: {str(e)}")
+            log_error("Parse", f"Failed to parse API response: {str(e)}",
+                     suggestion="API response format may have changed or is invalid")
             return None
         except Exception as e:
-            print(f"[OpenAIProvider] Unexpected error: {str(e)}")
+            log_error("Unexpected", str(e))
             return None
+
+    def _get_http_error_suggestion(self, status_code: int) -> str:
+        """根据 HTTP 状态码返回建议"""
+        suggestions = {
+            400: "Check request format and parameters",
+            401: "Check CHAT_API_KEY is valid",
+            403: "API key may lack permissions",
+            404: "Check CHAT_API_URL is correct",
+            429: "Rate limit exceeded, wait and retry",
+            500: "API server error, try again later",
+            502: "API gateway error, try again later",
+            503: "API service unavailable, try again later",
+        }
+        return suggestions.get(status_code, "Check API configuration")
 
     def test_connection(self) -> Dict[str, Any]:
         """
@@ -113,7 +170,9 @@ class OpenAIProvider(ChatProvider):
         Returns:
             测试结果字典
         """
-        print("🧪 Testing OpenAI-compatible API connection...")
+        logger.info("=" * 50)
+        logger.info("🧪 Testing OpenAI-compatible API connection...")
+        logger.info("=" * 50)
 
         test_messages = [
             {
@@ -138,11 +197,13 @@ class OpenAIProvider(ChatProvider):
             "Content-Type": "application/json"
         }
 
-        try:
-            print(f"   📡 API URL: {self.get_api_url()}")
-            print(f"   🤖 Model: {self.chat_config.get('model', '')}")
-            print(f"   💬 Test message: {test_messages[-1]['content']}")
+        # 配置信息
+        logger.info(f"📡 API URL: {self.get_api_url()}")
+        logger.info(f"🤖 Model: {self.chat_config.get('model', 'N/A')}")
+        logger.info(f"⏱️  Timeout: {self.get_timeout()}s")
+        logger.info(f"🔄 Max Retries: {self.http_config.get('max_retries', 3)}")
 
+        try:
             start_time = time.time()
 
             response = requests.post(
@@ -160,11 +221,14 @@ class OpenAIProvider(ChatProvider):
                 if 'choices' in result and len(result['choices']) > 0:
                     ai_response = result['choices'][0]['message']['content'].strip()
 
-                    print(f"   ✅ API response successful (time: {response_time:.2f}s)")
-                    print(f"   🤖 AI reply: {ai_response}")
+                    logger.info(f"✅ API response successful (time: {response_time:.2f}s)")
+                    logger.info(f"🤖 AI reply: {ai_response}")
 
                     if 'usage' in result:
-                        print(f"   📊 Token usage: {result['usage']}")
+                        usage = result['usage']
+                        logger.info(f"📊 Token usage: prompt={usage.get('prompt_tokens', 'N/A')}, "
+                                   f"completion={usage.get('completion_tokens', 'N/A')}, "
+                                   f"total={usage.get('total_tokens', 'N/A')}")
 
                     return {
                         "success": True,
@@ -175,11 +239,12 @@ class OpenAIProvider(ChatProvider):
                         "model": result.get('model', self.chat_config.get('model', ''))
                     }
                 else:
-                    print("   ❌ API response format error: missing choices field")
+                    logger.error("❌ API response format error: missing 'choices' field")
+                    logger.error(f"   Response body: {result}")
                     return {
                         "success": False,
                         "provider": self.provider_name,
-                        "error": "Invalid response format",
+                        "error": "Invalid response format: missing 'choices' field",
                         "details": result
                     }
             else:
@@ -190,30 +255,39 @@ class OpenAIProvider(ChatProvider):
                 except Exception:
                     error_msg += f": {response.text}"
 
-                print(f"   ❌ API request failed: {error_msg}")
+                logger.error(f"❌ API request failed: {error_msg}")
+                logger.info(f"💡 Suggestion: {self._get_http_error_suggestion(response.status_code)}")
+                
                 return {
                     "success": False,
                     "provider": self.provider_name,
                     "error": error_msg,
-                    "status_code": response.status_code
+                    "status_code": response.status_code,
+                    "suggestion": self._get_http_error_suggestion(response.status_code)
                 }
 
         except requests.exceptions.Timeout:
-            print(f"   ❌ API request timeout (>{self.get_timeout()}s)")
+            logger.error(f"❌ API request timeout (>{self.get_timeout()}s)")
+            logger.info("💡 Suggestion: Increase HTTP_TIMEOUT or check network latency")
             return {
                 "success": False,
                 "provider": self.provider_name,
-                "error": "Request timeout"
+                "error": "Request timeout",
+                "suggestion": "Increase HTTP_TIMEOUT or check network latency"
             }
-        except requests.exceptions.ConnectionError:
-            print("   ❌ Cannot connect to API server")
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"❌ Cannot connect to API server")
+            logger.error(f"   Error: {str(e)}")
+            logger.info("💡 Suggestion: Check CHAT_API_URL is correct and network is accessible")
             return {
                 "success": False,
                 "provider": self.provider_name,
-                "error": "Connection failed"
+                "error": "Connection failed",
+                "details": str(e),
+                "suggestion": "Check CHAT_API_URL is correct and network is accessible"
             }
         except Exception as e:
-            print(f"   ❌ API test exception: {str(e)}")
+            logger.error(f"❌ API test exception: {str(e)}")
             return {
                 "success": False,
                 "provider": self.provider_name,

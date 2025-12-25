@@ -4,6 +4,8 @@
 
 一个集成了AI能力的群晖聊天机器人，允许用户直接在Synology Chat中与AI模型（如GPT）进行对话。
 
+📖 **详细教程**: [群晖 Synology Chat 接入 DeepSeek，让企业聊天更智能！](https://blog.synocircle.top/archives/138)
+
 ## 功能特性
 
 - 🤖 AI驱动的智能对话

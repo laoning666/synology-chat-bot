@@ -4,6 +4,8 @@ English / [简体中文](./README_CN.md)
 
 An AI-powered chatbot for Synology Chat, allowing users to interact directly with AI models (like GPT) within Synology Chat.
 
+📖 **Tutorial (Chinese)**: [群晖 Synology Chat 接入 DeepSeek，让企业聊天更智能！](https://blog.synocircle.top/archives/138)
+
 ## Features
 
 - 🤖 AI-Powered Intelligent Conversations
